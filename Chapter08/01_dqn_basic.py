@@ -9,7 +9,7 @@ import torch.optim as optim
 
 from ignite.engine import Engine
 
-from lib import dqn_model, common
+from Chapter08.lib import dqn_model, common
 
 NAME = "01_baseline"
 
@@ -21,7 +21,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
     args = parser.parse_args()
-    device = torch.device("cuda" if args.cuda else "cpu")
+    # device = torch.device("cuda" if args.cuda else "cpu")
+    device = torch.device("cuda")
 
     env = gym.make(params.env_name)
     env = ptan.common.wrappers.wrap_dqn(env)

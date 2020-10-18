@@ -1,0 +1,5 @@
+Run 1010-10-18T1420 Pong Baseline
+---------------------------------
+GPU Belastung nur sehr tief, aber trotzdem schneller als mit CPU
+Am Anfang zwischen 10-15 Sekunden pro Periode, am Ende gegen 30 Sekunden pro Periode.
+nach ca. 200 Episoden (1.5 Stunden)pendelt sich der Reward zwischen 17-21 ein

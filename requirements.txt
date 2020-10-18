@@ -7,7 +7,7 @@ torch
 torchvision
 pytorch-ignite
 tensorboardX
-tensorflow
-nltk
-pybullet
+#tensorflow
+#nltk
+#pybullet
 ptan

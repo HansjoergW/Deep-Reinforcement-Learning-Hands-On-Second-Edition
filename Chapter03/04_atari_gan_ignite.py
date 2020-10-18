@@ -43,12 +43,15 @@ class InputWrapper(gym.ObservationWrapper):
         super(InputWrapper, self).__init__(*args)
         assert isinstance(self.observation_space, gym.spaces.Box)
         old_space = self.observation_space
-        self.observation_space = gym.spaces.Box(self.observation(old_space.low), self.observation(old_space.high),
-                                                dtype=np.float32)
+        self.observation_space = gym.spaces.Box(
+            self.observation(old_space.low),
+            self.observation(old_space.high),
+            dtype=np.float32)
 
     def observation(self, observation):
         # resize image
-        new_obs = cv2.resize(observation, (IMAGE_SIZE, IMAGE_SIZE))
+        new_obs = cv2.resize(
+            observation, (IMAGE_SIZE, IMAGE_SIZE))
         # transform (210, 160, 3) -> (3, 210, 160)
         new_obs = np.moveaxis(new_obs, 2, 0)
         return new_obs.astype(np.float32)
@@ -134,19 +137,30 @@ def iterate_batches(envs, batch_size=BATCH_SIZE):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cuda", default=False, action='store_true', help="Enable cuda computation")
+    parser.add_argument(
+        "--cuda", default=False, action='store_true',
+        help="Enable cuda computation")
     args = parser.parse_args()
 
-    device = torch.device("cuda" if args.cuda else "cpu")
-    envs = [InputWrapper(gym.make(name)) for name in ('Breakout-v0', 'AirRaid-v0', 'Pong-v0')]
+    # device = torch.device("cuda" if args.cuda else "cpu")
+    device = torch.device("cuda")
+
+    envs = [
+        InputWrapper(gym.make(name))
+        for name in ('Breakout-v0', 'AirRaid-v0', 'Pong-v0')
+    ]
     input_shape = envs[0].observation_space.shape
 
     net_discr = Discriminator(input_shape=input_shape).to(device)
     net_gener = Generator(output_shape=input_shape).to(device)
 
     objective = nn.BCELoss()
-    gen_optimizer = optim.Adam(params=net_gener.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
-    dis_optimizer = optim.Adam(params=net_discr.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
+    gen_optimizer = optim.Adam(
+        params=net_gener.parameters(), lr=LEARNING_RATE,
+        betas=(0.5, 0.999))
+    dis_optimizer = optim.Adam(
+        params=net_discr.parameters(), lr=LEARNING_RATE,
+        betas=(0.5, 0.999))
 
     true_labels_v = torch.ones(BATCH_SIZE, device=device)
     fake_labels_v = torch.zeros(BATCH_SIZE, device=device)
