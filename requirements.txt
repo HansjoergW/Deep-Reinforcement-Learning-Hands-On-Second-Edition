@@ -6,7 +6,7 @@ tensorboard
 torch
 torchvision
 pytorch-ignite
-tensorboardX
+#tensorboardX
 #tensorflow
 #nltk
 #pybullet

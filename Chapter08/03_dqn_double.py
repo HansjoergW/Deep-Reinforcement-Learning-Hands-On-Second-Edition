@@ -11,7 +11,7 @@ import torch.nn as nn
 
 from ignite.engine import Engine
 
-from lib import dqn_model, common
+from .lib import dqn_model, common
 
 NAME = "03_double"
 STATES_TO_EVALUATE = 1000
@@ -33,6 +33,7 @@ def calc_loss_double_dqn(batch, net, tgt_net, gamma,
     state_action_vals = state_action_vals.squeeze(-1)
     with torch.no_grad():
         next_states_v = torch.tensor(next_states).to(device)
+
         if double:
             next_state_acts = net(next_states_v).max(1)[1]
             next_state_acts = next_state_acts.unsqueeze(-1)
@@ -40,6 +41,7 @@ def calc_loss_double_dqn(batch, net, tgt_net, gamma,
                 1, next_state_acts).squeeze(-1)
         else:
             next_state_vals = tgt_net(next_states_v).max(1)[0]
+
         next_state_vals[done_mask] = 0.0
         exp_sa_vals = next_state_vals.detach() * gamma + rewards_v
     return nn.MSELoss()(state_action_vals, exp_sa_vals)
@@ -66,10 +68,8 @@ if __name__ == "__main__":
     epsilon_tracker = common.EpsilonTracker(selector, params)
     agent = ptan.agent.DQNAgent(net, selector, device=device)
 
-    exp_source = ptan.experience.ExperienceSourceFirstLast(
-        env, agent, gamma=params.gamma)
-    buffer = ptan.experience.ExperienceReplayBuffer(
-        exp_source, buffer_size=params.replay_size)
+    exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=params.gamma)
+    buffer = ptan.experience.ExperienceReplayBuffer(exp_source, buffer_size=params.replay_size)
     optimizer = optim.Adam(net.parameters(), lr=params.learning_rate)
 
     def process_batch(engine, batch):
@@ -82,6 +82,7 @@ if __name__ == "__main__":
         epsilon_tracker.frame(engine.state.iteration)
         if engine.state.iteration % params.target_net_sync == 0:
             tgt_net.sync()
+
         if engine.state.iteration % EVAL_EVERY_FRAME == 0:
             eval_states = getattr(engine.state, "eval_states", None)
             if eval_states is None:
@@ -91,6 +92,7 @@ if __name__ == "__main__":
                 engine.state.eval_states = eval_states
             engine.state.metrics["values"] = \
                 common.calc_values_of_states(eval_states, net, device)
+
         return {
             "loss": loss_v.item(),
             "epsilon": selector.epsilon,

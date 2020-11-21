@@ -65,7 +65,9 @@ if __name__ == "__main__":
     selector = ptan.actions.ArgmaxActionSelector()
     selector = ptan.actions.EpsilonGreedyActionSelector(
         epsilon=1, selector=selector)
+
     agent = ptan.agent.DQNAgent(net, selector)
+
     exp_source = ptan.experience.ExperienceSourceFirstLast(
         env, agent, gamma=GAMMA)
     buffer = ptan.experience.ExperienceReplayBuffer(

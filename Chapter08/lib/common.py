@@ -147,15 +147,15 @@ def calc_values_of_states(states, net, device="cpu"):
     return np.mean(mean_vals)
 
 
+# Installation der Handler
 def setup_ignite(engine: Engine, params: SimpleNamespace,
                  exp_source, run_name: str,
                  extra_metrics: Iterable[str] = ()):
     # get rid of missing metrics warning
     warnings.simplefilter("ignore", category=UserWarning)
 
-    handler = ptan_ignite.EndOfEpisodeHandler(
-        exp_source, bound_avg_reward=params.stop_reward)
-    handler.attach(engine)
+    # das Ding feuert EpisodenEnde Events / hört selber auf ITERATION_COMPLETED
+    ptan_ignite.EndOfEpisodeHandler(exp_source, bound_avg_reward=params.stop_reward).attach(engine)
     ptan_ignite.EpisodeFPSHandler().attach(engine)
 
     @engine.on(ptan_ignite.EpisodeEvents.EPISODE_COMPLETED)
@@ -177,25 +177,20 @@ def setup_ignite(engine: Engine, params: SimpleNamespace,
             trainer.state.episode, trainer.state.iteration))
         trainer.should_terminate = True
 
+    RunningAverage(output_transform=lambda v: v['loss']).attach(engine, "avg_loss")
+
     now = datetime.now().isoformat(timespec='minutes')
     now = now.replace(":", "")
     logdir = f"runs/{now}-{params.run_name}-{run_name}"
     tb = tb_logger.TensorboardLogger(log_dir=logdir)
-    run_avg = RunningAverage(output_transform=lambda v: v['loss'])
-    run_avg.attach(engine, "avg_loss")
 
-    metrics = ['reward', 'steps', 'avg_reward']
-    handler = tb_logger.OutputHandler(
-        tag="episodes", metric_names=metrics)
-    event = ptan_ignite.EpisodeEvents.EPISODE_COMPLETED
-    tb.attach(engine, log_handler=handler, event_name=event)
+    handler = tb_logger.OutputHandler(tag="episodes", metric_names=['reward', 'steps', 'avg_reward'])
+    tb.attach(engine, log_handler=handler, event_name=ptan_ignite.EpisodeEvents.EPISODE_COMPLETED)
 
     # write to tensorboard every 100 iterations
     ptan_ignite.PeriodicEvents().attach(engine)
+
     metrics = ['avg_loss', 'avg_fps']
     metrics.extend(extra_metrics)
-    handler = tb_logger.OutputHandler(
-        tag="train", metric_names=metrics,
-        output_transform=lambda a: a)
-    event = ptan_ignite.PeriodEvents.ITERS_100_COMPLETED
-    tb.attach(engine, log_handler=handler, event_name=event)
+    handler = tb_logger.OutputHandler(tag="train", metric_names=metrics, output_transform=lambda a: a)
+    tb.attach(engine, log_handler=handler, event_name=ptan_ignite.PeriodEvents.ITERS_100_COMPLETED)
